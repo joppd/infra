@@ -1,0 +1,8 @@
+/portainer_data/certs/cert.pem
+/portainer_data/certs/key.pem
+/portainer_data/docker_config/config.json
+/portainer_data/portainer.db
+/portainer_data/portainer.key
+/portainer_data/portainer.pub
+/chronograf/backup/chronograf-v1.db.1.8.0
+/chronograf/chronograf-v1.db

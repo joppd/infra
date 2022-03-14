@@ -1,0 +1,207 @@
+version: '3.8'
+
+networks:
+    infra-net:
+        ipam:
+            driver: default
+            config:
+                - subnet: "10.1.200.1/24"
+
+services:
+    dozzle:
+        container_name: dozzle
+        privileged: true
+        ports:
+            - '21001:8080'        
+        restart: always
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        environment:
+            TZ: "Asia/Seoul"
+        networks:
+           - 'infra-net'
+        image: amir20/dozzle
+       
+    portainer:
+        container_name: portainer
+        privileged: true
+        ports:
+            - '8000:8000'
+            - '9000:9000'
+            - '9443:9443'
+        restart: always
+        volumes:
+            - '/var/run/docker.sock:/var/run/docker.sock'
+            - './portainer_data:/data'
+        environment:
+            TZ: "Asia/Seoul"
+        networks:
+            - 'infra-net'
+        image: portainer/portainer-ce
+    
+    # TICK STACK START ############################################################
+    # TICK STACK - influxdb
+    influxdb:
+        container_name: influxdb
+        privileged: true
+        ports:
+            - '8083:8083'
+            - '8086:8086'
+            - '8088:8088'
+        restart: always
+        volumes:
+            - /storage/b/influxdb/:/var/lib/influxdb:Z
+            - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:Z
+        environment:
+            TZ: "Asia/Seoul"
+        networks:
+            - 'infra-net'
+        image: influxdb:1.8.4
+
+    # TICK STACK - chronograf
+    chronograf:
+        container_name: chronograf
+        privileged: true
+        ports:
+            - '8888:8888'        
+        restart: always
+        volumes:
+            - ./chronograf:/var/lib/chronograf
+        environment:
+            TZ: "Asia/Seoul"
+        networks:
+            - 'infra-net'
+        image: chronograf
+
+    # TICK STACK - telegraf
+    telegraf:
+        container_name: telegraf
+        privileged: true
+        restart: always
+        user: telegraf:972
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+            #- /usr/lib64/sa/sadc:/usr/lib64/sa/sadc
+            #- /usr/lib64/sa/:/rootfs/sa/
+            - /sys:/rootfs/sys:ro
+            - /proc:/rootfs/proc:ro
+            - /etc:/rootfs/etc:ro
+        environment:
+            HOST_PROC: /rootfs/proc
+            HOST_SYS: /rootfs/sys
+            HOST_ETC: /rootfs/etc
+            TZ: "Asia/Seoul"
+        networks:
+            - 'infra-net'
+        #image: telegraf:1.18.3-alpine
+        image: telegraf
+        
+    ## TICK STACK - kapacitor
+    #kapacitor:
+    #    container_name: kapacitor
+    #    privileged: true
+    #    restart: always
+    #    ports:
+    #        - '24592:9092'
+    #    environment:
+    #        - 'KAPACITOR_INFLUXDB_0_URLS_0=http://influxdb:8086'
+    #    volumes:
+    #        - /var/docker/kapacitor:/var/lib/kapacitor
+    #        - /var/log/kapacitor:/var/log/kapacitor
+    #        - /var/run/udf_socket:/var/run/udf_socket
+    #        - ./kapacitor/kapacitor.conf:/etc/kapacitor/kapacitor.conf
+    #    depends_on:
+    #        - kapacitor-socket-queue-udf-normal
+    #        - kapacitor-socket-queue-udf-xbar
+    #        - kapacitor-socket-queue-udf-imr
+    #    networks:
+    #        - 'infra-net'
+    #    image: kapacitor:1.5.3-alpine
+    # TICK STACK END ##############################################################
+    
+    # grafana dashboard
+    grafana:        
+        container_name: grafana
+        privileged: true
+        restart: always
+        ports:
+            - "3000:3000"
+        user: "104"
+        environment:
+            # - 'GF_INSTALL_PLUGINS=briangann-gauge-panel,briangann-datatable-panel,natel-plotly-panel,vonage-status-panel,marcuscalidus-svg-panel,grafana-piechart-panel,michaeldmoore-multistat-panel'
+            - GF_PANELS_DISABLE_SANITIZE_HTML=true
+            - TZ="Asia/Seoul"
+        volumes:
+            # Data persistency
+            # sudo mkdir -p /srv/docker/grafana/data; chown 472:472 /srv/docker/grafana/data
+            - ./grafana:/var/lib/grafana
+        networks:
+            - 'infra-net'
+        image: grafana/grafana:latest
+
+    # svn-server:        
+    #     container_name: svn-server
+    #     privileged: true
+    #     restart: always
+    #     ports:
+    #         - "3690:3690"
+    #     volumes:
+    #         - /home/kornic/svn:/var/opt/svn
+    #     environment:
+    #         TZ: "Asia/Seoul"
+    #     networks:
+    #         - 'infra-net'
+    #     image: garethflowers/svn-server
+
+    
+    # wiki-db:
+    #     container_name: wiki-db
+    #     privileged: true
+    #     restart: always
+    #     ports:
+    #         - '25432:5432'
+    #     environment:
+    #         - POSTGRES_DB=wiki
+    #         - POSTGRES_USER=wiki
+    #         - POSTGRES_PASSWORD=wiki
+    #     volumes:
+    #         - /storage/wiki/:/var/lib/postgresql/data
+    #     networks:
+    #         - infra-net
+    #     image: postgres:9.6
+
+    # wiki:
+    #     container_name: wiki
+    #     privileged: true
+    #     depends_on:
+    #         - wiki-db
+    #     environment:
+    #         DB_TYPE: postgres
+    #         DB_HOST: wiki-db
+    #         #DB_HOST: 172.23.0.2
+    #         DB_PORT: 5432
+    #         DB_USER: wiki
+    #         DB_PASS: wiki
+    #         DB_NAME: wiki
+    #     restart: always
+    #     networks:
+    #         - infra-net
+    #     ports:
+    #         - '21000:3000'
+    #     image: requarks/wiki:2
+    
+    # pgadmin:
+    #     container_name: pgadmin
+    #     privileged: true
+    #     ports:
+    #         - '21002:80'
+    #     restart: always
+    #     volumes:
+    #         - './pgadmin4/:/var/lib/pgadmin'
+    #     environment:
+    #         PGADMIN_DEFAULT_EMAIL: kornic@kornic.co.kr
+    #         PGADMIN_DEFAULT_PASSWORD: wiki
+    #     networks:
+    #         - infra-net
+    #     image: dpage/pgadmin4
