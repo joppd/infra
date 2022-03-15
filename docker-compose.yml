@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.9"
 
 networks:
     infra-net:
@@ -12,16 +12,16 @@ services:
         container_name: dozzle
         privileged: true
         ports:
-            - '21001:8080'        
+            - '21001:8080'
         restart: always
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
         environment:
             TZ: "Asia/Seoul"
         networks:
-           - 'infra-net'
+            - 'infra-net'
         image: amir20/dozzle
-       
+
     portainer:
         container_name: portainer
         privileged: true
@@ -38,7 +38,7 @@ services:
         networks:
             - 'infra-net'
         image: portainer/portainer-ce
-    
+
     # TICK STACK START ############################################################
     # TICK STACK - influxdb
     influxdb:
@@ -63,7 +63,7 @@ services:
         container_name: chronograf
         privileged: true
         ports:
-            - '8888:8888'        
+            - '8888:8888'
         restart: always
         volumes:
             - ./chronograf:/var/lib/chronograf
@@ -96,7 +96,7 @@ services:
             - 'infra-net'
         #image: telegraf:1.18.3-alpine
         image: telegraf
-        
+
     ## TICK STACK - kapacitor
     #kapacitor:
     #    container_name: kapacitor
@@ -119,27 +119,42 @@ services:
     #        - 'infra-net'
     #    image: kapacitor:1.5.3-alpine
     # TICK STACK END ##############################################################
-    
+
     # grafana dashboard
-    grafana:        
+    grafana:
         container_name: grafana
         privileged: true
         restart: always
         ports:
             - "3000:3000"
         user: "104"
-        environment:
-            # - 'GF_INSTALL_PLUGINS=briangann-gauge-panel,briangann-datatable-panel,natel-plotly-panel,vonage-status-panel,marcuscalidus-svg-panel,grafana-piechart-panel,michaeldmoore-multistat-panel'
-            - GF_PANELS_DISABLE_SANITIZE_HTML=true
-            - TZ="Asia/Seoul"
         volumes:
             # Data persistency
             # sudo mkdir -p /srv/docker/grafana/data; chown 472:472 /srv/docker/grafana/data
             - ./grafana:/var/lib/grafana
+        environment:
+            # - 'GF_INSTALL_PLUGINS=briangann-gauge-panel,briangann-datatable-panel,natel-plotly-panel,vonage-status-panel,marcuscalidus-svg-panel,grafana-piechart-panel,michaeldmoore-multistat-panel'
+            - GF_PANELS_DISABLE_SANITIZE_HTML=true
+            - TZ="Asia/Seoul"
         networks:
             - 'infra-net'
         image: grafana/grafana:latest
 
+    swagger-ui:
+        container_name: swagger-ui
+        privileged: true
+        restart: always
+        ports:
+            - 20002:8080
+        volumes:
+            - ./swagger-ui/doc:/usr/share/nginx/html/doc
+        environment:
+            API_URL: doc/service-management.yaml
+            TZ: "Asia/Seoul"
+        networks:
+            - 'infra-net'
+        image: swaggerapi/swagger-ui
+        
     # svn-server:        
     #     container_name: svn-server
     #     privileged: true
@@ -154,7 +169,7 @@ services:
     #         - 'infra-net'
     #     image: garethflowers/svn-server
 
-    
+
     # wiki-db:
     #     container_name: wiki-db
     #     privileged: true
@@ -190,7 +205,7 @@ services:
     #     ports:
     #         - '21000:3000'
     #     image: requarks/wiki:2
-    
+
     # pgadmin:
     #     container_name: pgadmin
     #     privileged: true
