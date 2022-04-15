@@ -170,53 +170,74 @@ services:
     #     image: garethflowers/svn-server
 
 
-    # wiki-db:
-    #     container_name: wiki-db
-    #     privileged: true
-    #     restart: always
-    #     ports:
-    #         - '25432:5432'
-    #     environment:
-    #         - POSTGRES_DB=wiki
-    #         - POSTGRES_USER=wiki
-    #         - POSTGRES_PASSWORD=wiki
-    #     volumes:
-    #         - /storage/wiki/:/var/lib/postgresql/data
-    #     networks:
-    #         - infra-net
-    #     image: postgres:9.6
+    wiki-db:
+        container_name: wiki-db
+        privileged: true
+        restart: always
+        ports:
+            - '25432:5432'
+        environment:
+            - POSTGRES_DB=wiki
+            - POSTGRES_USER=wiki
+            - POSTGRES_PASSWORD=wiki
+            - TZ="Asia/Seoul"
+        volumes:
+            - /storage/wiki/:/var/lib/postgresql/data
+        networks:
+            - infra-net
+        image: postgres:9.6
 
-    # wiki:
-    #     container_name: wiki
-    #     privileged: true
-    #     depends_on:
-    #         - wiki-db
-    #     environment:
-    #         DB_TYPE: postgres
-    #         DB_HOST: wiki-db
-    #         #DB_HOST: 172.23.0.2
-    #         DB_PORT: 5432
-    #         DB_USER: wiki
-    #         DB_PASS: wiki
-    #         DB_NAME: wiki
-    #     restart: always
-    #     networks:
-    #         - infra-net
-    #     ports:
-    #         - '21000:3000'
-    #     image: requarks/wiki:2
+    wiki:
+        container_name: wiki
+        privileged: true
+        restart: always
+        depends_on:
+            - wiki-db
+        environment:
+            DB_TYPE: postgres
+            DB_HOST: wiki-db
+            #DB_HOST: 172.23.0.2
+            DB_PORT: 5432
+            DB_USER: wiki
+            DB_PASS: wiki
+            DB_NAME: wiki
+            TZ: "Asia/Seoul"
+        networks:
+            - infra-net
+        ports:
+            - '21000:3000'
+        image: requarks/wiki
 
     # pgadmin:
     #     container_name: pgadmin
     #     privileged: true
-    #     ports:
-    #         - '21002:80'
     #     restart: always
+    #     ports:
+    #         - '20999:80'
     #     volumes:
     #         - './pgadmin4/:/var/lib/pgadmin'
     #     environment:
     #         PGADMIN_DEFAULT_EMAIL: kornic@kornic.co.kr
     #         PGADMIN_DEFAULT_PASSWORD: wiki
+    #         TZ: "Asia/Seoul"
     #     networks:
     #         - infra-net
     #     image: dpage/pgadmin4
+
+    openproject :
+        container_name: openproject 
+        privileged: true
+        restart: always
+        ports:
+            - '21002:80'
+        volumes:
+            - '/storage/openproject/pgdata:/var/openproject/pgdata'
+            - '/storage/openproject/assets:/var/openproject/assets'
+        environment:
+            SERVER_HOSTNAME: openproject.example.com
+            SECRET_KEY_BASE: 1q2w3e4r%
+            TZ: "Asia/Seoul"
+        networks:
+            - infra-net
+        image: openproject/community:12
+
